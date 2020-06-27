@@ -1,0 +1,11 @@
+apiVersion: xq2005.com/v1
+kind: KNLearning
+metadata:
+  name: nginx-app
+  namespace: xqtest
+spec:
+  size: 1
+  image: nginx:1.7.9
+  ports:
+    - port: 80
+      targetPort: 80
