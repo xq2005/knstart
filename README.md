@@ -4,7 +4,7 @@
 
 最近正在阅读[Knative Operator](https://github.com/knative/operator)源代码，发现Knative Operator并没有按照常理出牌，这个operator不是基于Operator-SDK。它是基于[Knative Common Package](https://github.com/knative/pkg)生成的框架代码。 这个Knative Common Package是在[code-generator](https://github.com/kubernetes/code-generator)的基础之上，创建了一种新的generator： injection。 injection对code-generator生成的clientset, informers和listers进行了第二次封装，提供给用户的interface变成了两个**ReconcileKind**（cr创建或者更新的时候这个interface会被调用）和 **FinalizeKind**（当cr被删除的这个interface会被调用），后面打算详细描述一下这两个接口的工作方式。 先介绍如何使用Knative Common Package完成一个operator的详细步骤。
 
-## 如何创建一个基于Knative的工程
+## 如何实现一个基于Knative的Operator
 
 ### 1.准备工作
 
@@ -40,6 +40,21 @@ mkdir -p $GOPATH/src/knstart/pkg/apis/operator/v1
 
 6). 创建$GOPATH/src/knstart/pkg/apis/operator/v1/[lifecycle.go](pkg/apis/operator/v1/lifecycle.go)
 
+完成之后的结构
+
+```bash
+pkg
+└── apis
+    └── operator
+        ├── register.go
+        └── v1
+            ├── doc.go
+            ├── lifecycle.go
+            ├── register.go
+            └── types.go
+
+```
+
 7). 创建$GOPATH/src/knstart/hack目录
 
 ```bash
@@ -66,20 +81,25 @@ go env -w GOPROXY=https://goproxy.cn,direct  #国内的小伙伴们一定要加�
 go mod vendor  
 ```
 
-13). 自动生成框架
+### 4. 自动生成框架
 
 ```bash
 chmod a+x hack/*.sh
 hack/update-codegen.sh
 ```
 
-14). 生成的代码都放在了$GOPATH/src/knstart/pkg/client下面，共有四个目录
+生成的代码都放在了$GOPATH/src/knstart/pkg/client下面，共有四个目录
 
 + clientset
 + informers
 + injection   ---- 这个是knative所特有的
 + listers
 
-15). 书写controller的代码，因为基于knative的api与operator-sdk的有一些差别。参考本项目中的代码就可以(后面可以详细描述一下与operator-sdk的区别有哪些)
+### 5. 书写controller的代码
 
-16). 调试，编译，创建image，部署的过程与operator与operator-sdk完全是相同的，在本项目中也没有添加这部分内容。
++ controller放在了pkg/reconciler下面，因为基于knative的api与operator-sdk的有一些差别。参考本项目中的代码书写自己的controller逻辑(后面可以详细描述一下与operator-sdk的区别有哪些)
++ main.go放到了cmd目录。
+
+### 6. 编译，调试，打包，部署
+
+这个过程与operator-sdk是类似的，本项目中没有添加这部分内容。
